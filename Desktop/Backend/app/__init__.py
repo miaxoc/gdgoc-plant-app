@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+import logging
 import requests
 import os
 from flask_bcrypt import Bcrypt
@@ -21,6 +22,9 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 def create_app():
     app = Flask("__main__")
     app.config["JWT_SECRET_KEY"] = "eblgQsPQXhOLIhPlaTsm6eSXk8jqyKUg"
+
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
 
     bcrypt = Bcrypt(app)
     CORS(app)
@@ -110,7 +114,6 @@ def create_app():
     @app.route('/api/speciesIdentifier', methods=['POST'])
     @jwt_required()
     def image_recognition():
-        print('Going inside Image recognition function')
         if "image" not in request.files:
             return jsonify({"error":"No image uploaded"}),400
 
@@ -128,7 +131,7 @@ def create_app():
             plant_details = response.json()
             """plant_species = plant_details["results"][0]["species"]["scientificNameWithoutAuthor"]
             return jsonify(plant_species)"""
-            print(f"{plant_details}")
+            logger.info(f'{plant_details}')
             plant_results= plant_details["results"][0]
             plant_species = plant_results["species"]
             plant_info={
