@@ -9,6 +9,7 @@ from flask_jwt_extended import (
     create_access_token,
     jwt_required,
 )
+from urllib.parse import urlparse
 
 PLANT_API_KEY = "2b10Vyoiu8f5b4q9bTUri4L4e"
 TREFLE_API_KEY = "jixqFbjugs0Nr-ZQd5EKLSwCq20Kd5z14cTc_7Omyjo"
@@ -24,7 +25,7 @@ def create_app():
     bcrypt = Bcrypt(app)
     CORS(app)
     jwt = JWTManager(app)
-    def get_db_connection():
+    """def get_db_connection():
         connection = psycopg2.connect(
             dbname = "userInfo",
             user = "gdg",
@@ -32,7 +33,25 @@ def create_app():
             host = "localhost",
             port = 5433
     )
+        return connection"""
+    
+    def get_db_connection():
+        database_url = os.environ.get('DATABASE_URL')
+
+        result = urlparse(database_url)
+
+        connection = psycopg2.connect(
+            dbname=result.path[1:], 
+            user=result.username,
+            password=result.password,
+            host=result.hostname,
+            port=result.port
+        )
         return connection
+
+    @app.route('/', methods =["GET"])
+    def homepage():
+        return "Hello World"
 
     @app.route('/api/registration', methods =["POST"])
     def register():
@@ -80,7 +99,7 @@ def create_app():
         if not user or not bcrypt.check_password_hash(user[2],pwd):
             return jsonify({"error": "Invalid Username or Password"}), 401
         
-        token = create_access_token(identity=user[0])
+        token = create_access_token(identity=str(user[0]))
         return jsonify({"access_token": token}), 200
 
     @app.route('/api/dashboard', methods = ['GET'])
@@ -91,6 +110,7 @@ def create_app():
     @app.route('/api/speciesIdentifier', methods=['POST'])
     @jwt_required()
     def image_recognition():
+        print('Going inside Image recognition function')
         if "image" not in request.files:
             return jsonify({"error":"No image uploaded"}),400
 
