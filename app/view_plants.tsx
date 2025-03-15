@@ -41,6 +41,7 @@ export default function HomeScreen() {
         keyExtractor={(item) => item.id}
         showsHorizontalScrollIndicator={false}
       />
+
       <Button title="Go to Add Plant" onPress={() => router.push("/add_plant")} />
 
 
