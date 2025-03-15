@@ -1,9 +1,12 @@
 import React from "react";
 import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
-import { RelativePathString, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 
 
 const AddPlantScreen = () => {
+
+  const router = useRouter();
+
   return (
     <ScrollView style={styles.container}>
       {/* Header */}

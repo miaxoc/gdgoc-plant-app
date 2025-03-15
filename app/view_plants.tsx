@@ -1,6 +1,7 @@
 import React from "react";
-import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
+import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, ScrollView, Button } from "react-native";
 import { Ionicons } from "@expo/vector-icons"; // Icons for profile/menu
+import { RelativePathString, useRouter } from "expo-router";
 
 export default function HomeScreen() {
   const plants = [
@@ -8,6 +9,8 @@ export default function HomeScreen() {
     { id: "2", image: require("../assets/plants/plant2.jpg"), notifications: 1 },
     { id: "3", image: require("../assets/plants/plant3.jpg"), notifications: 0 },
   ];
+
+  const router = useRouter();
 
   return (
     <ScrollView style={styles.container}>
@@ -38,6 +41,7 @@ export default function HomeScreen() {
         keyExtractor={(item) => item.id}
         showsHorizontalScrollIndicator={false}
       />
+      <Button title="Go to Add Plant" onPress={() => router.push("/add_plant")} />
 
 
     </ScrollView>
@@ -52,7 +56,7 @@ const styles = StyleSheet.create({
   sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginVertical: 10 },
   sectionTitle: { fontSize: 20, fontWeight: "bold" },
   seeAll: { color: "#739C6E", fontWeight: "bold" },
-  
+
   // Plants List
   plantContainer: { marginRight: 15, position: "relative" },
   plantImage: { width: 80, height: 80, borderRadius: 10 },
@@ -67,4 +71,3 @@ const styles = StyleSheet.create({
   taskAmount: { fontSize: 14, color: "#666" },
   taskFrequency: { fontSize: 12, color: "green" },
 });
-
