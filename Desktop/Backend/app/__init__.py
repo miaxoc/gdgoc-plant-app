@@ -8,7 +8,8 @@ import psycopg2
 from flask_jwt_extended import (
     JWTManager,
     create_access_token,
-    jwt_required,
+    get_jwt_identity,
+    jwt_required
 )
 from urllib.parse import urlparse
 
@@ -105,6 +106,10 @@ def create_app():
         
         token = create_access_token(identity=str(user[0]))
         return jsonify({"access_token": token}), 200
+    
+    @app.route('/api/change_password', methods=['POST'])
+    def changePassword():
+        return jsonify({"message": "done"}), 200
 
     @app.route('/api/dashboard', methods = ['GET'])
     @jwt_required()
@@ -137,14 +142,72 @@ def create_app():
             plant_info={
                 "Scientific Name": plant_species.get("scientificNameWithoutAuthor", "Unknown"),
                 "Common Name": (plant_species.get("commonNames") or ["Unknown"])[0],
-                "Family": plant_species.get("family", {}).get("scientificName", "Unkown"),
-                "Genus": plant_species.get("genus", {}).get("scientificName", "Unkown"),
+                "Family": plant_species.get("family", {}).get("scientificName", "Unknown"),
+                "Genus": plant_species.get("genus", {}).get("scientificName", "Unknown"),
             }
             return jsonify(plant_info), 200
 
         except Exception as e:
             return jsonify({"error": str(e)}), 500
+        
+        
+    @app.route('/api/get_identity', methods=['GET'])
+    @jwt_required()
+    def returnIdentity():
+        return jsonify({"identity":get_jwt_identity()}), 200
 
+    # @app.route('/api/add_plant', methods=['POST'])
+    # @jwt_required()
+    # def add_plant():
+    #     data = request.get_json()
+    #     plantName = data.get('plantName')
+    #     plantPhotoID = data.get('plantImgID')
+    #     errorMsg = ""
+    #     if not plantName and not plantPhotoID:
+    #         errorMsg = "plant name and plant photo ID are required"
+    #     elif not plantName :
+    #         errorMsg = "plant name is required"
+    #     elif not plantPhotoID :
+    #         errorMsg = "plant photo ID is required"
+    #     if not plantName or not plantPhotoID:
+    #         return jsonify ({"error":errorMsg}), 400
+        
+    #     userID = get_jwt_identity()
+        
+    #     conn = get_db_connection()
+    #     cursor = conn.cursor()
+    #     cursor.execute("SELECT * FROM plants WHERE userID =%s AND plantName =%s AND plantPhotoID =%s", (userID, plantName, plantPhotoID))
+        
+    #     if cursor.fetchone():
+    #         cursor.close()
+    #         conn.close()
+    #         return jsonify({"error": "plant exists already"}), 400
+        
+    #     cursor.execute("INSERT INTO plants (userID, plantName, plantPhotoID) VALUES (%s, %s, %s)", (userID, plantName, plantPhotoID))
+    #     conn.commit()
+    #     cursor.close()
+    #     conn.close()
+        
+    #     return jsonify({"message": "Plant Registered Successfully"}), 201
+    
+    # @app.route('/api/remove_plant', methods=['POST'])
+    # @jwt_required()
+    # def remove_plant():
+    #     user_id = get_jwt_identity()
+    #     return "removed plant"
+    
+    # #this doesn't need to exist, just a base if needed
+    # @app.route('/api/logout', methods=['POST'])
+    # @jwt_required()
+    # def logout():
+    #     user_id = get_jwt_identity()
+    #     # add user id to blacklist data table
+    #     return "logged out"
+        
+    # def notifyUser(userID, plantName):
+    #     #send notification to user about plant
+    #     return 0
+    
         
     return app
 
