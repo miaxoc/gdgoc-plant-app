@@ -1,0 +1,27 @@
+version: '3.8'
+
+services: 
+  plant-app-backend:
+    build: .
+    ports:
+      - "8080:5000"
+    depends_on:
+      - db
+    environment:
+      FLASK_ENV: development
+      DATABASE_URL: postgresql://postgres:GDGPlantApp@db:5432/userInfo
+
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: GDGPlantApp
+      POSTGRES_DB: userInfo
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
