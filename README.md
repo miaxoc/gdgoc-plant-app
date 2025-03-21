@@ -35,6 +35,31 @@ npm run reset-project
 
 This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
 
+
+## Backend Docker Usage Guide
+
+This guide explains how to build, run, and manage the backend using Docker Compose.
+
+### Prerequisites
+- Install [Docker](https://www.docker.com/get-started) and [Docker Compose](https://docs.docker.com/compose/).
+- Clone the backend repository
+
+### Run containers 
+- Build the contianers first
+```bash
+docker-compose build
+```
+- Run the containers
+```bash
+docker-compose up
+```
+- NOTE: Each time you make a change in the backend code, be sure run the above two commands for the changes to be reflected after stopping the containers
+
+- Stop Containers
+```bash
+docker-compose down
+```
+
 ## Learn more
 
 To learn more about developing your project with Expo, look at the following resources:
