@@ -16,6 +16,8 @@ from urllib.parse import urlparse
 PLANT_API_KEY = "2b10Vyoiu8f5b4q9bTUri4L4e"
 TREFLE_API_KEY = "jixqFbjugs0Nr-ZQd5EKLSwCq20Kd5z14cTc_7Omyjo"
 PLANT_IDENTIFY_URL = f"https://my-api.plantnet.org/v2/identify/all?include-related-images=false&no-reject=false&nb-results=10&lang=en&api-key={PLANT_API_KEY}"
+PUSHY_SECRET_KEY = "INSERT KEY HERE"
+PUSHY_API_URL = "https://api.pushy.me/push?api_key=" + PUSHY_SECRET_KEY
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -63,9 +65,13 @@ def create_app():
             data = request.get_json()
             username = data.get('username')
             pwd = data.get('pwd')
+            device = data.get('deviceID')
 
             if not username or not pwd :
                 return jsonify ({"error":"Username and password are required field"}), 400
+            
+            if not device:  #for sending notifications
+                device = "N/A"
             
             conn = get_db_connection()
             cursor = conn.cursor()
@@ -78,6 +84,7 @@ def create_app():
             
             hashed_password = bcrypt.generate_password_hash(pwd).decode('utf-8')
             cursor.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, hashed_password))
+            # cursor.execute("INSERT INTO users (username, password, device) VALUES (%s, %s, %s)", (username, hashed_password, device))
             conn.commit()
             cursor.close()
             conn.close()
@@ -155,6 +162,11 @@ def create_app():
     @jwt_required()
     def returnIdentity():
         return jsonify({"identity":get_jwt_identity()}), 200
+    
+    # @app.route('/api/change_device', methods=['PATCH'])
+    # @jwt_required
+    # def changeDeviceID():
+    #     return jsonify({"message":"device changed"}), 200
 
     # @app.route('/api/add_plant', methods=['POST'])
     # @jwt_required()
@@ -190,7 +202,12 @@ def create_app():
         
     #     return jsonify({"message": "Plant Registered Successfully"}), 201
     
-    # @app.route('/api/remove_plant', methods=['POST'])
+    # @app.route('/api/update_plant', methods=['PATCH'])
+    # @jwt_required()
+    # def update_plant():
+    #     return "updated plant"
+    
+    # @app.route('/api/remove_plant', methods=['DELETE'])
     # @jwt_required()
     # def remove_plant():
     #     user_id = get_jwt_identity()
@@ -206,14 +223,38 @@ def create_app():
         
     # def notifyUser(userID, plantName):
     #     #send notification to user about plant
+    #     DEVICE_TOKEN = 0 #get token from table
+        
+    #     conn = get_db_connection()
+    #     cursor = conn.cursor()
+    #     cursor.execute("SELECT * FROM users WHERE id =%s", (userID,)) #is this correct?
+    #     user = cursor.fetchone()
+    #     if (user[3] == "N/A"):
+    #         return "No Device Attached to User"
+    #     DEVICE_TOKEN = user[3]
+        
+    #     notif = {
+    #         "to": DEVICE_TOKEN,
+    #         "data": {
+    #             "message": "Water this plant!",
+    #             "title": "Notification Title"
+    #         },
+    #         "notification": {
+    #             "body": "plant notification!",
+    #             "title": "Notification Title"
+    #         }
+    #     }
+        
+    #     response = requests.post(PUSHY_API_URL, json=payload)
+    #     if response.status_code == 200:
+    #         print("Notification sent successfully!")
+    #     else:
+    #         print("Failed to send notification:", response.text)
     #     return 0
     
-        
+    # def sendNotifications():
+    #         #Decide when to send notifications later
+    #     return 0
+    
     return app
 
-
-
-
-
-
-    
