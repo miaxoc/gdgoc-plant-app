@@ -42,7 +42,7 @@ export default function HomeScreen() {
         showsHorizontalScrollIndicator={false}
       />
 
-      <Button title="Go to Add Plant" onPress={() => router.push("add_plant" as RelativePathString)} />
+      <Button title="DEBUG: Go to Add Plant" onPress={() => router.push("add_plant" as RelativePathString)} />
 
 
 
