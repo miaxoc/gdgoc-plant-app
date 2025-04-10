@@ -12,6 +12,7 @@ from flask_jwt_extended import (
     jwt_required
 )
 from urllib.parse import urlparse
+from flask_apscheduler import APScheduler
 
 PLANT_API_KEY = "2b10Vyoiu8f5b4q9bTUri4L4e"
 TREFLE_API_KEY = "jixqFbjugs0Nr-ZQd5EKLSwCq20Kd5z14cTc_7Omyjo"
@@ -21,6 +22,8 @@ PUSHY_API_URL = "https://api.pushy.me/push?api_key=" + PUSHY_SECRET_KEY
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+scheduler = APScheduler()
 
 def create_app():
     app = Flask("__main__")
@@ -41,6 +44,9 @@ def create_app():
             port = 5433
     )
         return connection"""
+    
+    scheduler.init_app(app)
+    # scheduler.start()
     
     def get_db_connection():
         database_url = os.environ.get('DATABASE_URL')
@@ -114,7 +120,7 @@ def create_app():
         token = create_access_token(identity=str(user[0]))
         return jsonify({"access_token": token}), 200
     
-    @app.route('/api/change_password', methods=['POST'])
+    @app.route('/api/change_password', methods=['PATCH'])
     def changePassword():
         return jsonify({"message": "done"}), 200
 
@@ -157,7 +163,7 @@ def create_app():
         except Exception as e:
             return jsonify({"error": str(e)}), 500
         
-        
+    #mainly for debugging purposes
     @app.route('/api/get_identity', methods=['GET'])
     @jwt_required()
     def returnIdentity():
@@ -168,39 +174,40 @@ def create_app():
     # def changeDeviceID():
     #     return jsonify({"message":"device changed"}), 200
 
-    # @app.route('/api/add_plant', methods=['POST'])
-    # @jwt_required()
-    # def add_plant():
-    #     data = request.get_json()
-    #     plantName = data.get('plantName')
-    #     plantPhotoID = data.get('plantImgID')
-    #     errorMsg = ""
-    #     if not plantName and not plantPhotoID:
-    #         errorMsg = "plant name and plant photo ID are required"
-    #     elif not plantName :
-    #         errorMsg = "plant name is required"
-    #     elif not plantPhotoID :
-    #         errorMsg = "plant photo ID is required"
-    #     if not plantName or not plantPhotoID:
-    #         return jsonify ({"error":errorMsg}), 400
+    @app.route('/api/add_plant', methods=['POST'])
+    @jwt_required()
+    def add_plant():
+        data = request.get_json()
+        species = data.get('species')
+        plantPhotoID = data.get('imgID')
+        errorMsg = ""
+        if not species and not plantPhotoID:
+            errorMsg = "plant name and plant photo ID are required"
+        elif not species :
+            errorMsg = "plant name is required"
+        elif not plantPhotoID :
+            errorMsg = "plant photo ID is required"
+        if not species or not plantPhotoID:
+            return jsonify ({"error":errorMsg}), 400
         
-    #     userID = get_jwt_identity()
+        userID = get_jwt_identity()
         
-    #     conn = get_db_connection()
-    #     cursor = conn.cursor()
-    #     cursor.execute("SELECT * FROM plants WHERE userID =%s AND plantName =%s AND plantPhotoID =%s", (userID, plantName, plantPhotoID))
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM plants WHERE user_id =%s AND species =%s AND photo_id =%s", (userID, species, plantPhotoID))
         
-    #     if cursor.fetchone():
-    #         cursor.close()
-    #         conn.close()
-    #         return jsonify({"error": "plant exists already"}), 400
+        if cursor.fetchone():
+            cursor.close()
+            conn.close()
+            return jsonify({"error": "plant exists already"}), 400
         
-    #     cursor.execute("INSERT INTO plants (userID, plantName, plantPhotoID) VALUES (%s, %s, %s)", (userID, plantName, plantPhotoID))
-    #     conn.commit()
-    #     cursor.close()
-    #     conn.close()
+        time = 24
+        cursor.execute("INSERT INTO plants (species, photo_id, user_id, remind_timer, remind_max_time) VALUES (%s, %s, %s, %s, %s)", (species, plantPhotoID, userID, time, time))
+        conn.commit()
+        cursor.close()
+        conn.close()
         
-    #     return jsonify({"message": "Plant Registered Successfully"}), 201
+        return jsonify({"message": "Plant Registered Successfully"}), 201
     
     # @app.route('/api/update_plant', methods=['PATCH'])
     # @jwt_required()
@@ -221,40 +228,70 @@ def create_app():
     #     # add user id to blacklist data table
     #     return "logged out"
         
-    # def notifyUser(userID, plantName):
-    #     #send notification to user about plant
-    #     DEVICE_TOKEN = 0 #get token from table
         
-    #     conn = get_db_connection()
-    #     cursor = conn.cursor()
-    #     cursor.execute("SELECT * FROM users WHERE id =%s", (userID,)) #is this correct?
-    #     user = cursor.fetchone()
-    #     if (user[3] == "N/A"):
-    #         return "No Device Attached to User"
-    #     DEVICE_TOKEN = user[3]
+    def notifyUser(userID, plantNames):
+        #send notification to user about plant
+        DEVICE_TOKEN = 0 #get token from table with cursor
         
-    #     notif = {
-    #         "to": DEVICE_TOKEN,
-    #         "data": {
-    #             "message": "Water this plant!",
-    #             "title": "Notification Title"
-    #         },
-    #         "notification": {
-    #             "body": "plant notification!",
-    #             "title": "Notification Title"
-    #         }
-    #     }
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE id =%s", (userID,)) #is this correct?
+        user = cursor.fetchone()
+        if (user[3] == "N/A"):
+            return "No Device Attached to User"
+        DEVICE_TOKEN = user[3]
         
-    #     response = requests.post(PUSHY_API_URL, json=payload)
-    #     if response.status_code == 200:
-    #         print("Notification sent successfully!")
-    #     else:
-    #         print("Failed to send notification:", response.text)
-    #     return 0
+        notif = {
+            "to": DEVICE_TOKEN,
+            "data": {
+                "message": "Water plants " + ", ".join(plantNames) + "!",
+                "title": "Notification Title"
+            },
+            "notification": {
+                "body": "plant notification!",
+                "title": "Notification Title"
+            }
+        }
+        
+        # below will only work after deployment due to PUSHY.
+        # response = requests.post(PUSHY_API_URL, json=notif)
+        conn.close()
+        cursor.close()
+        # if response.status_code == 200:
+        print("Notification sent successfully!")
+        # else:
+            # print("Failed to send notification:", response.text)
+        return 0
     
-    # def sendNotifications():
-    #         #Decide when to send notifications later
-    #     return 0
+    # add hours/days to plants table, decrement by 1
+    # x < 0 ? notify and reset : no notif
+    # @app.route('/api/notify_all', methods=['PATCH'])
+    @scheduler.task('interval', id='decrement_column',seconds = 5)
+    def notificationTimer():
+        print("Hello")
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("UPDATE plants SET remind_timer = GREATEST(remind_timer - 1, 0)")
+        cursor.execute("SELECT * FROM plants WHERE remind_timer = 0 ORDER BY user_id")
+        
+        rows = cursor.fetchall()
+        if len(rows) > 0:
+            currentUser = rows[0][4]
+            plantList = []
+            for row in rows:
+                if row[4] != currentUser:
+                    #send a reminder for rows 0 through current
+                    # notifyUser(row[4], plantList) # edit notify function for plantList!
+                    # print(f"reminder sent for user {row[4]}")
+                    plantList = []
+                plantList.append((row[2],row[0]))
+        
+        cursor.execute("UPDATE plants SET remind_timer = remind_max_time WHERE remind_timer = 0")
+        conn.commit()
+        cursor.close()
+        conn.close()
+        # return jsonify({"message": "Plant Notified Successfully"}), 200
     
     return app
 
