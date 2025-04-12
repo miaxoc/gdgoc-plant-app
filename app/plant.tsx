@@ -15,12 +15,12 @@ export default function PlantDetails() {
     // Temporary Plant for Testing Purposes
     const plant = { 
         id: "1",
-        name: "Test Name",
-        scientificName: "Test SName",
-        hint: "Some sort of Hint here",
+        name: "Cherry Tomato",
+        scientificName: "Some Scientific Name for Cherry Tomato Goes Here",
+        hint: "Tomatos are very red...",
         imageUrl: require("../assets/plants/plant1.jpg"),
-        notifications: 4,
-        tasks: [{id: 1, title: "Test Title", subtitle: "Test Subtitle"}]
+        notifications: 1,
+        tasks: [{id: 1, title: "Water your plant!", subtitle: "This is pretty self explanatory, I think!"}]
     };
     
     const [loading, setLoading] = useState(true);

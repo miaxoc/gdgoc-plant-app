@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
+import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, ScrollView, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons"; // Icons for profile/menu
 import { RelativePathString, useRouter } from "expo-router";
 
@@ -9,16 +9,16 @@ export default function HomeScreen() {
   const router = useRouter();
 
   const plants = [
-    { id: "1", image: require("../assets/plants/plant1.jpg"), notifications: 4 },
+    { id: "1", image: require("../assets/plants/plant1.jpg"), notifications: 1 },
     { id: "2", image: require("../assets/plants/plant2.jpg"), notifications: 1 },
-    { id: "3", image: require("../assets/plants/plant3.jpg"), notifications: 0 },
+    { id: "3", image: require("../assets/plants/plant3.jpg"), notifications: 2 },
   ];
 
   const tasks = [
     { id: "1", category: "Hydration", title: "Cherry Tomato", amount: "100ml", frequency: "Weekly", completed: false, image: require("../assets/plants/plant1.jpg") },
     { id: "2", category: "Hydration", title: "Flower", amount: "50ml", frequency: "Daily", completed: true, image: require("../assets/plants/plant3.jpg") },
     { id: "3", category: "Sunlight Time", title: "Mint", amount: "30 minutes", frequency: "Daily", completed: false, image: require("../assets/plants/plant2.jpg") },
-    { id: "4", category: "Routine check", title: "Basil", amount: "Check Leaves for spots", frequency: "", completed: false, image: require("../assets/plants/plant3.jpg") },
+    { id: "4", category: "Routine check", title: "Flower", amount: "Check Leaves for spots", frequency: "", completed: false, image: require("../assets/plants/plant3.jpg") },
   ];
 
   return (
@@ -38,7 +38,10 @@ export default function HomeScreen() {
         data={plants}
         renderItem={({ item }) => (
           <View style={styles.plantContainer}>
-            <Image source={item.image} style={styles.plantImage} />
+            {/* TODO: Edit this so that when backend integration works, to include data about the specific plant (id) */}
+            <Pressable onPress={() => router.push("plant" as RelativePathString)}>
+                <Image source={item.image} style={styles.plantImage} />
+            </Pressable>
             {item.notifications > 0 && (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{item.notifications}</Text>
@@ -87,7 +90,7 @@ const styles = StyleSheet.create({
   // Plants List
   plantContainer: { marginRight: 15, position: "relative" },
   plantImage: { width: 80, height: 80, borderRadius: 10 },
-  badge: { position: "absolute", top: -5, right: -5, backgroundColor: "red", borderRadius: 12, width: 24, height: 24, justifyContent: "center", alignItems: "center" },
+  badge: { position: "absolute", top: 0, right: 0, backgroundColor: "red", borderRadius: 12, width: 24, height: 24, justifyContent: "center", alignItems: "center" },
   badgeText: { color: "white", fontSize: 12, fontWeight: "bold" },
 
   // Tasks
