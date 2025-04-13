@@ -34,7 +34,11 @@ const AddPlantScreen = () => {
 
       <Text style={styles.otherTitle}>Other</Text>
 
-      <TouchableOpacity style={styles.button}>
+
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => router.push("/AddPlant1")}
+      >
         <Text style={styles.buttonText}>I already have an idea...</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -47,7 +51,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#FEFCF3",
     padding: 20,
   },
-
   title: {
     fontSize: 24,
     fontWeight: "bold",
@@ -67,27 +70,29 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     fontStyle: "italic",
+    color: "#FEFCF3",
+    marginBottom: 10,
   },
   tagContainer: {
     flexDirection: "row",
-    marginTop: 5,
+    marginBottom: 10,
   },
   tag: {
     backgroundColor: "#72A579",
     borderColor: "#FEFCF3",
     borderWidth: 2,
+    color: "#FEFCF3",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 5,
     marginRight: 5,
     fontSize: 12,
-    color: "#FEFCF3",
   },
   image: {
     width: "100%",
     height: 200,
     borderRadius: 10,
-    marginTop: 10,
+    marginBottom: 10,
   },
   description: {
     fontSize: 14,
