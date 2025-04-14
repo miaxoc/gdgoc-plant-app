@@ -46,7 +46,6 @@ def create_app():
         return connection"""
     
     scheduler.init_app(app)
-    # scheduler.start()
     
     def get_db_connection():
         database_url = os.environ.get('DATABASE_URL')
@@ -89,8 +88,7 @@ def create_app():
                 return jsonify({"error": "User exists already"}), 400
             
             hashed_password = bcrypt.generate_password_hash(pwd).decode('utf-8')
-            cursor.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, hashed_password))
-            # cursor.execute("INSERT INTO users (username, password, device) VALUES (%s, %s, %s)", (username, hashed_password, device))
+            cursor.execute("INSERT INTO users (username, password, device) VALUES (%s, %s, %s)", (username, hashed_password, device))
             conn.commit()
             cursor.close()
             conn.close()
@@ -169,10 +167,10 @@ def create_app():
     def returnIdentity():
         return jsonify({"identity":get_jwt_identity()}), 200
     
-    # @app.route('/api/change_device', methods=['PATCH'])
-    # @jwt_required
-    # def changeDeviceID():
-    #     return jsonify({"message":"device changed"}), 200
+    @app.route('/api/change_device', methods=['PATCH'])
+    @jwt_required
+    def changeDeviceID():
+        return jsonify({"message":"device changed"}), 200
 
     @app.route('/api/add_plant', methods=['POST'])
     @jwt_required()
@@ -209,28 +207,27 @@ def create_app():
         
         return jsonify({"message": "Plant Registered Successfully"}), 201
     
-    # @app.route('/api/update_plant', methods=['PATCH'])
-    # @jwt_required()
-    # def update_plant():
-    #     return "updated plant"
+    @app.route('/api/update_plant', methods=['PATCH'])
+    @jwt_required()
+    def update_plant():
+        return "updated plant"
     
-    # @app.route('/api/remove_plant', methods=['DELETE'])
-    # @jwt_required()
-    # def remove_plant():
-    #     user_id = get_jwt_identity()
-    #     return "removed plant"
+    @app.route('/api/remove_plant', methods=['DELETE'])
+    @jwt_required()
+    def remove_plant():
+        user_id = get_jwt_identity()
+        return "removed plant"
     
     # #this doesn't need to exist, just a base if needed
-    # @app.route('/api/logout', methods=['POST'])
-    # @jwt_required()
-    # def logout():
-    #     user_id = get_jwt_identity()
-    #     # add user id to blacklist data table
-    #     return "logged out"
+    @app.route('/api/logout', methods=['POST'])
+    @jwt_required()
+    def logout():
+        user_id = get_jwt_identity()
+        # add user id to blacklist data table
+        return "logged out"
         
-        
+    #send notification to user about plant
     def notifyUser(userID, plantNames):
-        #send notification to user about plant
         DEVICE_TOKEN = 0 #get token from table with cursor
         
         conn = get_db_connection()
@@ -257,15 +254,11 @@ def create_app():
         # response = requests.post(PUSHY_API_URL, json=notif)
         conn.close()
         cursor.close()
-        # if response.status_code == 200:
         print("Notification sent successfully!")
-        # else:
-            # print("Failed to send notification:", response.text)
         return 0
     
     # add hours/days to plants table, decrement by 1
     # x < 0 ? notify and reset : no notif
-    # @app.route('/api/notify_all', methods=['PATCH'])
     @scheduler.task('interval', id='decrement_column',seconds = 5)
     def notificationTimer():
         print("Hello")
@@ -282,8 +275,7 @@ def create_app():
             for row in rows:
                 if row[4] != currentUser:
                     #send a reminder for rows 0 through current
-                    # notifyUser(row[4], plantList) # edit notify function for plantList!
-                    # print(f"reminder sent for user {row[4]}")
+                    notifyUser(row[4], plantList) # edit notify function for plantList!
                     plantList = []
                 plantList.append((row[2],row[0]))
         
@@ -291,7 +283,6 @@ def create_app():
         conn.commit()
         cursor.close()
         conn.close()
-        # return jsonify({"message": "Plant Notified Successfully"}), 200
     
     return app
 
