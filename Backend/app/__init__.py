@@ -65,8 +65,9 @@ def create_app():
             username = data.get('username')
             pwd = data.get('pwd')
             device = data.get('deviceID')
+            email = data.get('email')
 
-            if not username or not pwd :
+            if not username or not pwd or not email:
                 return jsonify ({"error":"Username and password are required field"}), 400
             
             if not device:  #for sending notifications
@@ -82,7 +83,7 @@ def create_app():
                 return jsonify({"error": "User exists already"}), 400
             
             hashed_password = bcrypt.generate_password_hash(pwd).decode('utf-8')
-            cursor.execute("INSERT INTO users (username, password, deviceid) VALUES (%s, %s, %s)", (username, hashed_password, device))
+            cursor.execute("INSERT INTO users (email, username, password, deviceid) VALUES (%s, %s, %s, %s)", (email, username, hashed_password, device))
             conn.commit()
             cursor.close()
             conn.close()
