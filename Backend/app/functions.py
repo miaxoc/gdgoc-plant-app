@@ -2,8 +2,11 @@ import os
 from urllib.parse import urlparse
 import psycopg2
 
+
 PUSHY_SECRET_KEY = "INSERT KEY HERE"
 PUSHY_API_URL = "https://api.pushy.me/push?api_key=" + PUSHY_SECRET_KEY
+
+
 def get_db_connection():
     database_url = os.environ.get('DATABASE_URL')
 
@@ -18,8 +21,11 @@ def get_db_connection():
     )
     return connection
 
+def getDBURL():
+    return os.environ.get('DATABASE_URL')
+
 def notifyUser(userID=1, plantNames="test"):
-    print(f"Hello {userID}" + " " + plantNames, flush=True)
+    print(f"NOTIF {userID}" + " " + plantNames, flush=True)
     DEVICE_TOKEN = 0 #get token from table with cursor
     
     conn = get_db_connection()
@@ -34,10 +40,8 @@ def notifyUser(userID=1, plantNames="test"):
     
     sendNotif(DEVICE_TOKEN, "Water plants " + ", ".join(plantNames) + "!")
     
-    # below will only work after deployment due to PUSHY.
-    
-    # conn.close()
-    # cursor.close()
+    conn.close()
+    cursor.close()
     # print("Notification sent successfully! "+notif["data"]["message"], flush=True)
     return "okay"
 

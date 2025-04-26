@@ -13,17 +13,25 @@ from flask_jwt_extended import (
 )
 from urllib.parse import urlparse
 from flask_apscheduler import APScheduler
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+from datetime import datetime
+
+from app.functions import notifyUser, getDBURL, get_db_connection
 
 PLANT_API_KEY = "2b10Vyoiu8f5b4q9bTUri4L4e"
 TREFLE_API_KEY = "jixqFbjugs0Nr-ZQd5EKLSwCq20Kd5z14cTc_7Omyjo"
 PLANT_IDENTIFY_URL = f"https://my-api.plantnet.org/v2/identify/all?include-related-images=false&no-reject=false&nb-results=10&lang=en&api-key={PLANT_API_KEY}"
-PUSHY_SECRET_KEY = "INSERT KEY HERE"
-PUSHY_API_URL = "https://api.pushy.me/push?api_key=" + PUSHY_SECRET_KEY
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 scheduler = APScheduler()
+scheduler2 = BackgroundScheduler()
+jobstores = {
+    'default': SQLAlchemyJobStore(url=getDBURL())
+}
+scheduler2 = BackgroundScheduler(jobstores=jobstores)
 
 def create_app():
     app = Flask("__main__")
@@ -46,20 +54,6 @@ def create_app():
         return connection"""
     
     scheduler.init_app(app)
-    
-    def get_db_connection():
-        database_url = os.environ.get('DATABASE_URL')
-
-        result = urlparse(database_url)
-
-        connection = psycopg2.connect(
-            dbname=result.path[1:], 
-            user=result.username,
-            password=result.password,
-            host=result.hostname,
-            port=result.port
-        )
-        return connection
 
     @app.route('/', methods =["GET"])
     def homepage():
@@ -88,7 +82,7 @@ def create_app():
                 return jsonify({"error": "User exists already"}), 400
             
             hashed_password = bcrypt.generate_password_hash(pwd).decode('utf-8')
-            cursor.execute("INSERT INTO users (username, password, device) VALUES (%s, %s, %s)", (username, hashed_password, device))
+            cursor.execute("INSERT INTO users (username, password, deviceid) VALUES (%s, %s, %s)", (username, hashed_password, device))
             conn.commit()
             cursor.close()
             conn.close()
@@ -227,41 +221,18 @@ def create_app():
         return "logged out"
         
     #send notification to user about plant
-    def notifyUser(userID, plantNames):
-        DEVICE_TOKEN = 0 #get token from table with cursor
-        
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE id =%s", (userID,)) #is this correct?
-        user = cursor.fetchone()
-        if (user[3] == "N/A"):
-            return "No Device Attached to User"
-        DEVICE_TOKEN = user[3]
-        
-        notif = {
-            "to": DEVICE_TOKEN,
-            "data": {
-                "message": "Water plants " + ", ".join(plantNames) + "!",
-                "title": "Notification Title"
-            },
-            "notification": {
-                "body": "plant notification!",
-                "title": "Notification Title"
-            }
-        }
-        
-        # below will only work after deployment due to PUSHY.
-        # response = requests.post(PUSHY_API_URL, json=notif)
-        conn.close()
-        cursor.close()
-        print("Notification sent successfully!")
-        return 0
+    @app.route('/api/send_notif_test', methods=['POST'])
+    def notifTest():
+        notifyUser()
+        return "okay"
     
     # add hours/days to plants table, decrement by 1
     # x < 0 ? notify and reset : no notif
-    @scheduler.task('interval', id='decrement_column',seconds = 5)
+    # this could be used for basic watering/lighting reminders
+    # @scheduler.task('interval', id='decrement_column',seconds = 5)
     def notificationTimer():
-        print("Hello")
+        print("Timed Update", flush=True)
+        logger.info("Timed Update")
         conn = get_db_connection()
         cursor = conn.cursor()
         
@@ -283,6 +254,27 @@ def create_app():
         conn.commit()
         cursor.close()
         conn.close()
+    
+    # for other reminders
+    @app.route('/api/schedule_reminder', methods=['POST'])
+    def addNotif():
+        scheduler2.add_job(
+            func=notifyUser,
+            trigger='interval',
+            seconds=10, #runs every 10 secs
+            args=[1,"test"],
+            id='testJob',
+            replace_existing=True
+        )
+        return jsonify({"message":"reminder scheduled"}), 200
+    
+    @app.route('/api/remove_reminder', methods=['POST'])
+    def deleteReminder():
+        try:
+            scheduler2.remove_job('testJob')
+        except:
+            return jsonify({"message":"Error: reminder not found"}), 404
+        return jsonify(), 204
     
     return app
 

@@ -18,6 +18,7 @@ PyJWT==2.10.1
 python-dateutil==2.9.0.post0
 requests==2.32.3
 six==1.17.0
+SQLAlchemy==2.0.40
 tzlocal==5.3.1
 urllib3==2.3.0
 Werkzeug==3.1.3
