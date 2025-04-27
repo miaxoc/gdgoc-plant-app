@@ -68,7 +68,7 @@ def create_app():
             email = data.get('email')
 
             if not username or not pwd or not email:
-                return jsonify ({"error":"Username and password are required field"}), 400
+                return jsonify ({"error":"Email, username, and password are required fields"}), 400
             
             if not device:  #for sending notifications
                 device = "N/A"
@@ -95,20 +95,21 @@ def create_app():
         data = request.get_json()
         username = data.get('username')
         pwd = data.get('pwd')
+        email = data.get('email')
 
-        if not username or not pwd :
-            return jsonify({"error": "Username and Password are required fields"}), 400
+        if (not username and not email) or not pwd :
+            return jsonify({"error": "Username/Email and Password are required fields"}), 400
         
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
+        cursor.execute("SELECT * FROM users WHERE username = %s OR email = %s", (username, email))
 
         user = cursor.fetchone()
         cursor.close()
         conn.close()
 
         if not user or not bcrypt.check_password_hash(user[2],pwd):
-            return jsonify({"error": "Invalid Username or Password"}), 401
+            return jsonify({"error": "Invalid Username/Email or Password"}), 401
         
         token = create_access_token(identity=str(user[0]))
         return jsonify({"access_token": token}), 200
