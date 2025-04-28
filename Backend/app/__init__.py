@@ -188,14 +188,14 @@ def create_app():
         
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM plants WHERE user_id =%s AND species =%s AND photo_id =%s", (userID, species, plantPhotoID)) # this will not really work, needs fixing
+        cursor.execute("SELECT * FROM plants WHERE user_id =%s AND species =%s AND images ->> 0 =%s", (userID, species, plantPhotoID)) # this will not really work, needs fixing
         
         if cursor.fetchone():
             cursor.close()
             conn.close()
             return jsonify({"error": "plant exists already"}), 400
         
-        images = {"1" : data.get('photo_id')}
+        images = [data.get('photo_url')]
         stage = data.get('stage')
         notes = data.get('notes')
         location = data.get('location')
