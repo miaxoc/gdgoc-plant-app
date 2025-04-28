@@ -188,15 +188,20 @@ def create_app():
         
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM plants WHERE user_id =%s AND species =%s AND photo_id =%s", (userID, species, plantPhotoID))
+        cursor.execute("SELECT * FROM plants WHERE user_id =%s AND species =%s AND photo_id =%s", (userID, species, plantPhotoID)) # this will not really work, needs fixing
         
         if cursor.fetchone():
             cursor.close()
             conn.close()
             return jsonify({"error": "plant exists already"}), 400
         
-        time = 24
-        cursor.execute("INSERT INTO plants (species, photo_id, user_id, remind_timer, remind_max_time) VALUES (%s, %s, %s, %s, %s)", (species, plantPhotoID, userID, time, time))
+        images = {"1" : data.get('photo_id')}
+        stage = data.get('stage')
+        notes = data.get('notes')
+        location = data.get('location')
+        waterTiming = f"Every {data.get('water_timing')}"
+        
+        cursor.execute("INSERT INTO plants (user_id, images, stage, notes, location, water_timing) VALUES (%s, %s, %s, %s, %s)", (userID, images, stage, notes, location, waterTiming))
         conn.commit()
         cursor.close()
         conn.close()
