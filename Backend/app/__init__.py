@@ -5,6 +5,7 @@ import os
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 import psycopg2
+from psycopg2.extras import Json
 from flask_jwt_extended import (
     JWTManager,
     create_access_token,
@@ -64,14 +65,14 @@ def create_app():
             data = request.get_json()
             username = data.get('username')
             pwd = data.get('pwd')
-            device = data.get('deviceID')
+            device = [data.get('deviceID')]
             email = data.get('email')
 
             if not username or not pwd or not email:
-                return jsonify ({"error":"Email, username, and password are required fields"}), 400
+                return jsonify({"error":"Email, username, and password are required fields"}), 400
             
-            if not device:  #for sending notifications
-                device = "N/A"
+            if not device[0]:  #for sending notifications
+                device = ["N/A"]
             
             conn = get_db_connection()
             cursor = conn.cursor()
@@ -83,7 +84,7 @@ def create_app():
                 return jsonify({"error": "User exists already"}), 400
             
             hashed_password = bcrypt.generate_password_hash(pwd).decode('utf-8')
-            cursor.execute("INSERT INTO users (email, username, password, deviceid) VALUES (%s, %s, %s, %s)", (email, username, hashed_password, device))
+            cursor.execute("INSERT INTO users (email, username, password, device_id) VALUES (%s, %s, %s, %s)", (email, username, hashed_password, Json(device)))
             conn.commit()
             cursor.close()
             conn.close()
@@ -99,7 +100,7 @@ def create_app():
 
         if (not username and not email) or not pwd :
             return jsonify({"error": "Username/Email and Password are required fields"}), 400
-        
+        logger.info("working")
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM users WHERE username = %s OR email = %s", (username, email))
@@ -108,7 +109,7 @@ def create_app():
         cursor.close()
         conn.close()
 
-        if not user or not bcrypt.check_password_hash(user[2],pwd):
+        if not user or not bcrypt.check_password_hash(user[3],pwd):
             return jsonify({"error": "Invalid Username/Email or Password"}), 401
         
         token = create_access_token(identity=str(user[0]))
@@ -173,35 +174,35 @@ def create_app():
     def add_plant():
         data = request.get_json()
         species = data.get('species')
-        plantPhotoID = data.get('imgID')
+        plantPhoto = data.get('photo_url')
         errorMsg = ""
-        if not species and not plantPhotoID:
+        if not species and not plantPhoto:
             errorMsg = "plant name and plant photo ID are required"
         elif not species :
             errorMsg = "plant name is required"
-        elif not plantPhotoID :
+        elif not plantPhoto:
             errorMsg = "plant photo ID is required"
-        if not species or not plantPhotoID:
+        if not species or not plantPhoto:
             return jsonify ({"error":errorMsg}), 400
         
         userID = get_jwt_identity()
         
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM plants WHERE user_id =%s AND species =%s AND images ->> 0 =%s", (userID, species, plantPhotoID)) # this will not really work, needs fixing
+        cursor.execute("SELECT * FROM plants WHERE user_id =%s AND species =%s AND images ->> 0 =%s", (userID, species, plantPhoto)) # this will not really work, needs fixing
         
         if cursor.fetchone():
             cursor.close()
             conn.close()
             return jsonify({"error": "plant exists already"}), 400
         
-        images = [data.get('photo_url')]
+        images = [plantPhoto]    # work on error checking later
         stage = data.get('stage')
         notes = data.get('notes')
         location = data.get('location')
         waterTiming = f"Every {data.get('water_timing')}"
         
-        cursor.execute("INSERT INTO plants (user_id, images, stage, notes, location, water_timing) VALUES (%s, %s, %s, %s, %s)", (userID, images, stage, notes, location, waterTiming))
+        cursor.execute("INSERT INTO plants (user_id, images, species, stage, notes, location, water_timings) VALUES (%s, %s, %s, %s, %s, %s, %s)", (userID, Json(images), species, stage, notes, location, waterTiming))
         conn.commit()
         cursor.close()
         conn.close()
@@ -263,25 +264,25 @@ def create_app():
         conn.close()
     
     # for other reminders
-    @app.route('/api/schedule_reminder', methods=['POST'])
-    def addNotif():
-        scheduler2.add_job(
-            func=notifyUser,
-            trigger='interval',
-            seconds=10, #runs every 10 secs
-            args=[1,"test"],
-            id='testJob',
-            replace_existing=True
-        )
-        return jsonify({"message":"reminder scheduled"}), 200
+    # @app.route('/api/schedule_reminder', methods=['POST'])
+    # def addNotif():
+    #     scheduler2.add_job(
+    #         func=notifyUser,
+    #         trigger='interval',
+    #         seconds=10, #runs every 10 secs
+    #         args=[1,"test"],
+    #         id='testJob',
+    #         replace_existing=True
+    #     )
+    #     return jsonify({"message":"reminder scheduled"}), 200
     
-    @app.route('/api/remove_reminder', methods=['POST'])
-    def deleteReminder():
-        try:
-            scheduler2.remove_job('testJob')
-        except:
-            return jsonify({"message":"Error: reminder not found"}), 404
-        return jsonify(), 204
+    # @app.route('/api/remove_reminder', methods=['POST'])
+    # def deleteReminder():
+    #     try:
+    #         scheduler2.remove_job('testJob')
+    #     except:
+    #         return jsonify({"message":"Error: reminder not found"}), 404
+    #     return jsonify(), 204
     
     return app
 
