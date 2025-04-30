@@ -1,6 +1,7 @@
 import os
 from urllib.parse import urlparse
 import psycopg2
+from psycopg2.extras import Json
 
 
 PUSHY_SECRET_KEY = "INSERT KEY HERE"
@@ -23,6 +24,14 @@ def get_db_connection():
 
 def getDBURL():
     return os.environ.get('DATABASE_URL')
+
+def addTask(userID, taskName, taskDetails, taskTypes, plant_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # cursor.execute("INSERT INTO tasks (user_id, name, details, types) VALUES (%s, %s, %s, %s)", (userID, taskName, taskDetails, Json(taskTypes)))
+    print(userID + " " + taskName + " " + taskDetails)
+    conn.close()
+    cursor.close()
 
 def notifyUser(userID=1, plantNames="test"):
     print(f"NOTIF {userID}" + " " + plantNames, flush=True)

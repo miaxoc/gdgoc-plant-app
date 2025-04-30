@@ -18,7 +18,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from datetime import datetime
 
-from app.functions import notifyUser, getDBURL, get_db_connection
+from app.functions import notifyUser, getDBURL, get_db_connection, addTask
 
 PLANT_API_KEY = "2b10Vyoiu8f5b4q9bTUri4L4e"
 TREFLE_API_KEY = "jixqFbjugs0Nr-ZQd5EKLSwCq20Kd5z14cTc_7Omyjo"
@@ -228,7 +228,7 @@ def create_app():
         # add user id to blacklist data table
         return "logged out"
         
-    #send notification to user about plant
+    #debug route, send notification to user about plant
     @app.route('/api/send_notif_test', methods=['POST'])
     def notifTest():
         notifyUser()
@@ -264,25 +264,42 @@ def create_app():
         conn.close()
     
     # for other reminders
-    # @app.route('/api/schedule_reminder', methods=['POST'])
-    # def addNotif():
-    #     scheduler2.add_job(
-    #         func=notifyUser,
-    #         trigger='interval',
-    #         seconds=10, #runs every 10 secs
-    #         args=[1,"test"],
-    #         id='testJob',
-    #         replace_existing=True
-    #     )
-    #     return jsonify({"message":"reminder scheduled"}), 200
+    # @jwt_required
+    @app.route('/api/schedule_reminder', methods=['POST'])
+    def addNotif():
+        # userID = get_jwt_identity()
+        data = request.get_json()
+        taskName = data.get("name")
+        taskDetails = data.get("details")
+        plantID = data.get("plantID")
+        if not plantID:
+            plantID = -1
+        recurring = data.get("recurring")
+        if recurring == 'yes':
+            frequency = data.get("frequency")
+            recurring = 'interval'
+            print(frequency + " " + recurring, flush=True)
+        else:
+            recurring = ''
+        types = data.get("types")
+        scheduler2.add_job(
+            func=addTask,
+            trigger='interval',
+            seconds=10, #runs every 10 secs
+            user = 0,
+            id=userID + ", " + taskName,
+            args=[userID, taskName, taskDetails, types, plantID],
+            replace_existing=True
+        )
+        return jsonify({"message":"reminder scheduled"}), 200
     
-    # @app.route('/api/remove_reminder', methods=['POST'])
-    # def deleteReminder():
-    #     try:
-    #         scheduler2.remove_job('testJob')
-    #     except:
-    #         return jsonify({"message":"Error: reminder not found"}), 404
-    #     return jsonify(), 204
+    @app.route('/api/remove_reminder', methods=['POST'])
+    def deleteReminder():
+        try:
+            scheduler2.remove_job('testJob')
+        except:
+            return jsonify({"message":"Error: reminder not found"}), 404
+        return jsonify(), 204
     
     return app
 
