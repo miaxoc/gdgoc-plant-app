@@ -1,3 +1,4 @@
+import pickle
 from flask import Flask, request, jsonify
 import logging
 import requests
@@ -17,6 +18,7 @@ from flask_apscheduler import APScheduler
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from datetime import datetime
+import zoneinfo
 
 from app.functions import notifyUser, getDBURL, get_db_connection, addTask
 
@@ -264,10 +266,10 @@ def create_app():
         conn.close()
     
     # for other reminders
-    # @jwt_required
-    @app.route('/api/schedule_reminder', methods=['POST'])
-    def addNotif():
-        # userID = get_jwt_identity()
+    @app.route('/api/schedule_task', methods=['POST'])
+    @jwt_required()
+    def addScheduledTask():
+        userID = get_jwt_identity()
         data = request.get_json()
         taskName = data.get("name")
         taskDetails = data.get("details")
@@ -278,28 +280,87 @@ def create_app():
         if recurring == 'yes':
             frequency = data.get("frequency")
             recurring = 'interval'
-            print(frequency + " " + recurring, flush=True)
+            print(f"{frequency}, {recurring}", flush=True)
         else:
             recurring = ''
+        print(f"{userID} , {taskName}", flush=True)
         types = data.get("types")
+        current_time = datetime.now(tz=zoneinfo.ZoneInfo('Asia/Tokyo'))
+        current_time = datetime.strptime(current_time.strftime("%Y-%m-%d %H:%M:%S"), "%Y-%m-%d %H:%M:%S")
+        # replace times with cron later
+        print(current_time, flush=True)
         scheduler2.add_job(
             func=addTask,
-            trigger='interval',
-            seconds=10, #runs every 10 secs
-            user = 0,
-            id=userID + ", " + taskName,
+            trigger=recurring,
+            seconds=frequency, #runs every 10 secs
+            id= f"{userID} , {taskName}",
             args=[userID, taskName, taskDetails, types, plantID],
+            start_date=datetime(current_time.year, current_time.month, current_time.day, current_time.hour, current_time.minute + 2, second=0, tzinfo=zoneinfo.ZoneInfo('Asia/Tokyo')),
             replace_existing=True
         )
         return jsonify({"message":"reminder scheduled"}), 200
     
-    @app.route('/api/remove_reminder', methods=['POST'])
-    def deleteReminder():
+    @app.route('/api/remove_scheduled_task', methods=['POST'])
+    @jwt_required()
+    def deleteTask():
+        userID = get_jwt_identity()
+        data = request.get_json()
+        taskName = data.get("name")
+        if not taskName:
+            return jsonify({"Error: Task Name Required"}),400
         try:
-            scheduler2.remove_job('testJob')
+            scheduler2.remove_job(f'{userID} , {taskName}')
         except:
-            return jsonify({"message":"Error: reminder not found"}), 404
-        return jsonify(), 204
+            return jsonify({"message":"Error: task not found"}), 404
+        return jsonify({"message:":"Task Removed"}), 204
+    
+    @app.route('/api/get_task_details', methods=['GET'])
+    @jwt_required()
+    def getTaskDetails():
+        userID = get_jwt_identity()
+        data = request.get_json()
+        taskName = data.get("name")
+        task = scheduler2.get_job(job_id=f"{userID} , {taskName}")
+        if not task:
+            return jsonify(), 400
+        return jsonify({
+            "id": task.id,
+            "next_run_time": task.next_run_time.isoformat() if task.next_run_time else None,
+            "args": task.args,
+            "kwargs": task.kwargs,
+            "trigger": str(task.trigger),
+        }), 200
+        
+    @app.route('/api/get_scheduled_tasks', methods=['GET'])
+    @jwt_required()
+    def getAllScheduledTasks():
+        userID = get_jwt_identity()
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT * FROM apscheduler_jobs WHERE id LIKE %s", (f"{userID} , %",))
+        tasks = cursor.fetchall()
+        if not tasks:
+            return jsonify({"Message":"No tasks"}), 200
+        tasks_list = []
+        for task in tasks:
+            print(pickle.loads(task[2]), flush=True)
+            task_dict = {
+                "id": task[0],
+                "next_run_time": task[1],
+                "job_state": pickle.loads(task[2]).get('args')[2],  # Decode if needed
+            }
+            tasks_list.append(task_dict)
+        
+        cursor.close()
+        conn.close()
+        return jsonify(tasks_list), 200
+    
+    @app.route('/api/testTime', methods=['GET'])
+    def returnTime():
+        current_time = datetime.now(tz=zoneinfo.ZoneInfo('Asia/Tokyo'))
+        current_time = datetime.strptime(current_time.strftime("%Y-%m-%d %H:%M:%S"), "%Y-%m-%d %H:%M:%S")
+        return jsonify({"time":current_time}), 200
     
     return app
 

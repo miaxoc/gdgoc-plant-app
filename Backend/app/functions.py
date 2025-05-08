@@ -29,7 +29,7 @@ def addTask(userID, taskName, taskDetails, taskTypes, plant_id):
     conn = get_db_connection()
     cursor = conn.cursor()
     # cursor.execute("INSERT INTO tasks (user_id, name, details, types) VALUES (%s, %s, %s, %s)", (userID, taskName, taskDetails, Json(taskTypes)))
-    print(userID + " " + taskName + " " + taskDetails)
+    print(f"{userID}, {taskName}, {taskDetails}", flush=True)
     conn.close()
     cursor.close()
 
