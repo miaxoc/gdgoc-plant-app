@@ -5,7 +5,6 @@ import requests
 import os
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
-import psycopg2
 from psycopg2.extras import Json
 from flask_jwt_extended import (
     JWTManager,
@@ -13,8 +12,6 @@ from flask_jwt_extended import (
     get_jwt_identity,
     jwt_required
 )
-from urllib.parse import urlparse
-from flask_apscheduler import APScheduler
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from datetime import datetime
@@ -29,12 +26,11 @@ PLANT_IDENTIFY_URL = f"https://my-api.plantnet.org/v2/identify/all?include-relat
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-scheduler = APScheduler()
-scheduler2 = BackgroundScheduler()
+# scheduler = BackgroundScheduler()
 jobstores = {
     'default': SQLAlchemyJobStore(url=getDBURL())
 }
-scheduler2 = BackgroundScheduler(jobstores=jobstores)
+scheduler = BackgroundScheduler(jobstores=jobstores)
 
 def create_app():
     app = Flask("__main__")
@@ -55,8 +51,6 @@ def create_app():
             port = 5433
     )
         return connection"""
-    
-    scheduler.init_app(app)
 
     @app.route('/', methods =["GET"])
     def homepage():
@@ -222,50 +216,7 @@ def create_app():
         user_id = get_jwt_identity()
         return "removed plant"
     
-    # #this doesn't need to exist, just a base if needed
-    @app.route('/api/logout', methods=['POST'])
-    @jwt_required()
-    def logout():
-        user_id = get_jwt_identity()
-        # add user id to blacklist data table
-        return "logged out"
-        
-    #debug route, send notification to user about plant
-    @app.route('/api/send_notif_test', methods=['POST'])
-    def notifTest():
-        notifyUser()
-        return "okay"
-    
-    # add hours/days to plants table, decrement by 1
-    # x < 0 ? notify and reset : no notif
-    # this could be used for basic watering/lighting reminders
-    # @scheduler.task('interval', id='decrement_column',seconds = 5)
-    def notificationTimer():
-        print("Timed Update", flush=True)
-        logger.info("Timed Update")
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute("UPDATE plants SET remind_timer = GREATEST(remind_timer - 1, 0)")
-        cursor.execute("SELECT * FROM plants WHERE remind_timer = 0 ORDER BY user_id")
-        
-        rows = cursor.fetchall()
-        if len(rows) > 0:
-            currentUser = rows[0][4]
-            plantList = []
-            for row in rows:
-                if row[4] != currentUser:
-                    #send a reminder for rows 0 through current
-                    notifyUser(row[4], plantList) # edit notify function for plantList!
-                    plantList = []
-                plantList.append((row[2],row[0]))
-        
-        cursor.execute("UPDATE plants SET remind_timer = remind_max_time WHERE remind_timer = 0")
-        conn.commit()
-        cursor.close()
-        conn.close()
-    
-    # for other reminders
+    # for reminders/tasks
     @app.route('/api/schedule_task', methods=['POST'])
     @jwt_required()
     def addScheduledTask():
@@ -280,16 +231,13 @@ def create_app():
         if recurring == 'yes':
             frequency = data.get("frequency")
             recurring = 'interval'
-            print(f"{frequency}, {recurring}", flush=True)
         else:
             recurring = ''
-        print(f"{userID} , {taskName}", flush=True)
         types = data.get("types")
         current_time = datetime.now(tz=zoneinfo.ZoneInfo('Asia/Tokyo'))
         current_time = datetime.strptime(current_time.strftime("%Y-%m-%d %H:%M:%S"), "%Y-%m-%d %H:%M:%S")
         # replace times with cron later
-        print(current_time, flush=True)
-        scheduler2.add_job(
+        scheduler.add_job(
             func=addTask,
             trigger=recurring,
             seconds=frequency, #runs every 10 secs
@@ -309,10 +257,10 @@ def create_app():
         if not taskName:
             return jsonify({"Error: Task Name Required"}),400
         try:
-            scheduler2.remove_job(f'{userID} , {taskName}')
+            scheduler.remove_job(f'{userID} , {taskName}')
         except:
             return jsonify({"message":"Error: task not found"}), 404
-        return jsonify({"message:":"Task Removed"}), 204
+        return jsonify({"message:":"Task Removed"}), 200
     
     @app.route('/api/get_task_details', methods=['GET'])
     @jwt_required()
@@ -320,7 +268,7 @@ def create_app():
         userID = get_jwt_identity()
         data = request.get_json()
         taskName = data.get("name")
-        task = scheduler2.get_job(job_id=f"{userID} , {taskName}")
+        task = scheduler.get_job(job_id=f"{userID} , {taskName}")
         if not task:
             return jsonify(), 400
         return jsonify({
@@ -344,7 +292,6 @@ def create_app():
             return jsonify({"Message":"No tasks"}), 200
         tasks_list = []
         for task in tasks:
-            print(pickle.loads(task[2]), flush=True)
             task_dict = {
                 "id": task[0],
                 "next_run_time": task[1],
@@ -355,6 +302,34 @@ def create_app():
         cursor.close()
         conn.close()
         return jsonify(tasks_list), 200
+    
+    @app.route('/api/remove_task', methods=["POST"])
+    @jwt_required()
+    def removeCurrentTask():
+        data = request.get_json()
+        taskID = data.get("task_id")
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM tasks WHERE task_id = %s", (taskID,))
+        if (cursor.fetchone()):
+            cursor.execute("DELETE FROM tasks WHERE task_id = %s", (taskID,))
+            conn.commit()
+            cursor.close()
+            conn.close()
+            return jsonify({"message":"Task Removed"}), 200
+        return jsonify({"errorMsg":"No task found"}),400
+    
+    @app.route('/api/get_current_tasks')
+    @jwt_required()
+    def getAllCurrentTasks():
+        userID = get_jwt_identity()
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM tasks WHERE user_id = %s", (userID,))
+        tasks = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return jsonify({"tasks":tasks}), 200
     
     @app.route('/api/testTime', methods=['GET'])
     def returnTime():

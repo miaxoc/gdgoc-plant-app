@@ -3,11 +3,6 @@ from urllib.parse import urlparse
 import psycopg2
 from psycopg2.extras import Json
 
-
-PUSHY_SECRET_KEY = "INSERT KEY HERE"
-PUSHY_API_URL = "https://api.pushy.me/push?api_key=" + PUSHY_SECRET_KEY
-
-
 def get_db_connection():
     database_url = os.environ.get('DATABASE_URL')
 
@@ -28,7 +23,8 @@ def getDBURL():
 def addTask(userID, taskName, taskDetails, taskTypes, plant_id):
     conn = get_db_connection()
     cursor = conn.cursor()
-    # cursor.execute("INSERT INTO tasks (user_id, name, details, types) VALUES (%s, %s, %s, %s)", (userID, taskName, taskDetails, Json(taskTypes)))
+    cursor.execute("INSERT INTO tasks (user_id, name, details, types) VALUES (%s, %s, %s, %s)", (userID, taskName, taskDetails, Json(taskTypes)))
+    conn.commit()
     print(f"{userID}, {taskName}, {taskDetails}", flush=True)
     conn.close()
     cursor.close()
