@@ -212,16 +212,102 @@ def create_app():
         
         return jsonify({"message": "Plant Registered Successfully"}), 201
     
+  #work on this section - Ria 
     @app.route('/api/update_plant', methods=['PATCH'])
     @jwt_required()
     def update_plant():
-        return "updated plant"
+        user = get_jwt_identity()
+        data = request.get_json()
+        plantID = data.get('plantID')
+
+        #is input valid?
+        if not plantID:
+            return jsonify({"error": "Plant ID is required"}), 400
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        #check if plant exists
+        cursor.execute(
+            "SELECT * FROM plants WHERE user_id = %s AND plant_id = %s", (user, plantID)
+        )
+        plant = cursor.fetchone()
+
+        if not plant:
+            cursor.close()
+            conn.close()
+            return jsonify({"error": "Plant not found"}), 404
+        
+        updateAllowed = ['nickname', 'location', 'stage', 'notes']
+        updates = []
+        values = []
+        
+        for field in updateAllowed:
+            if field in data:
+                updates.append(f"{field} = %s")
+                values.append(data[field])
+
+        if not updates:
+            cursor.close()
+            conn.close()
+            return jsonify({"error": "No valid fields to update"}), 400
+        
+        values.extend([user, plantID])
+
+        update_query = f"""
+            UPDATE plants
+            SET {', '.join(updates)}
+            WHERE user_id = %s AND plant_id = %s
+            """
+        try:
+            cursor.execute(update_query, tuple(values))
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            cursor.close()
+            conn.close()
+            return jsonify({"error": str(e)}), 500
+
+        cursor.close()
+        conn.close()
+        return jsonify({"message": "Plant updated successfully"}), 200
+
     
     @app.route('/api/remove_plant', methods=['DELETE'])
     @jwt_required()
     def remove_plant():
-        user_id = get_jwt_identity()
-        return "removed plant"
+        user = get_jwt_identity()
+        data = request.get_json()
+        plantID = data.get('plantID')
+
+        #input validation
+        if not plantID:
+            return jsonify({"error": "Plant ID is required"}), 400
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        logger.info(f"photoID: {plantID}, user: {user}")
+        #check if plant exists
+        cursor.execute(
+            "SELECT * FROM plants WHERE user_id = %s AND plant_id = %s",
+            (user, plantID)
+        )
+        plant = cursor.fetchone()
+
+        if not plant:
+            cursor.close()
+            conn.close()
+            return jsonify({"error": "Plant not found"}), 404
+        
+        #Delete the plant
+        cursor.execute(
+            "DELETE FROM plants WHERE user_id = %s AND plant_id = %s",
+            (user, plantID)
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({"message" :"Plant removed successfully"})
     
     # for reminders/tasks
     @app.route('/api/schedule_task', methods=['POST'])
