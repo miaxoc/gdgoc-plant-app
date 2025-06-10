@@ -115,10 +115,17 @@ def create_app():
     def changePassword():
         return jsonify({"message": "done"}), 200
 
-    @app.route('/api/dashboard', methods = ['GET'])
+    @app.route('/api/get_all_plants', methods = ['GET'])
     @jwt_required()
     def dashboard():
-        return jsonify({"message":"Successful Login"}), 200
+        userID = get_jwt_identity()
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM plants WHERE user_id = %s", (userID,))
+        plants = cursor.fetchall()
+        conn.close()
+        cursor.close()
+        return jsonify({"plants":plants}), 200
 
     @app.route('/api/speciesIdentifier', methods=['POST'])
     @jwt_required()
@@ -228,7 +235,7 @@ def create_app():
         if not plantID:
             plantID = -1
         recurring = data.get("recurring")
-        if recurring == 'yes':
+        if recurring == 'yes':  #shift to cron later
             frequency = data.get("frequency")
             recurring = 'interval'
         else:
