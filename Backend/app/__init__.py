@@ -14,6 +14,7 @@ from flask_jwt_extended import (
 )
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+from apscheduler.triggers.cron import CronTrigger
 from datetime import datetime
 import zoneinfo
 
@@ -273,7 +274,7 @@ def create_app():
         return jsonify({"message": "Plant updated successfully"}), 200
 
     
-    @app.route('/api/remove_plant', methods=['DELETE'])
+    @app.route('/api/remove_plant', methods=['POST'])
     @jwt_required()
     def remove_plant():
         user = get_jwt_identity()
@@ -307,7 +308,7 @@ def create_app():
         conn.commit()
         cursor.close()
         conn.close()
-        return jsonify({"message" :"Plant removed successfully"})
+        return jsonify({"message" :"Plant removed successfully"}), 200
     
     # for reminders/tasks
     @app.route('/api/schedule_task', methods=['POST'])
@@ -320,58 +321,22 @@ def create_app():
         plantID = data.get("plantID")
         if not plantID:
             plantID = -1
-        recurring = data.get("recurring")
-        if recurring == 'yes':  #shift to cron later
-            frequency = data.get("frequency")
-            recurring = 'interval'
-        else:
-            recurring = ''
+        #shift to cron later
+        timeHour = data.get("hour") #string?
+        timeMin = data.get("minute")
         types = data.get("types")
-        current_time = datetime.now(tz=zoneinfo.ZoneInfo('Asia/Tokyo'))
-        current_time = datetime.strptime(current_time.strftime("%Y-%m-%d %H:%M:%S"), "%Y-%m-%d %H:%M:%S")
-        # replace times with cron later
         scheduler.add_job(
             func=addTask,
-            trigger=recurring,
-            seconds=frequency, #runs every 10 secs
-            id= f"{userID} , {taskName}",
+            trigger='cron',
+            hour = timeHour,
+            minute = timeMin,
+            timezone=zoneinfo.ZoneInfo('Asia/Tokyo'),
+            id= f"{userID}_{taskName}",
             args=[userID, taskName, taskDetails, types, plantID],
-            start_date=datetime(current_time.year, current_time.month, current_time.day, current_time.hour, current_time.minute + 2, second=0, tzinfo=zoneinfo.ZoneInfo('Asia/Tokyo')),
             replace_existing=True
         )
         return jsonify({"message":"reminder scheduled"}), 200
     
-    @app.route('/api/remove_scheduled_task', methods=['POST'])
-    @jwt_required()
-    def deleteTask():
-        userID = get_jwt_identity()
-        data = request.get_json()
-        taskName = data.get("name")
-        if not taskName:
-            return jsonify({"Error: Task Name Required"}),400
-        try:
-            scheduler.remove_job(f'{userID} , {taskName}')
-        except:
-            return jsonify({"message":"Error: task not found"}), 404
-        return jsonify({"message:":"Task Removed"}), 200
-    
-    @app.route('/api/get_task_details', methods=['GET'])
-    @jwt_required()
-    def getTaskDetails():
-        userID = get_jwt_identity()
-        data = request.get_json()
-        taskName = data.get("name")
-        task = scheduler.get_job(job_id=f"{userID} , {taskName}")
-        if not task:
-            return jsonify(), 400
-        return jsonify({
-            "id": task.id,
-            "next_run_time": task.next_run_time.isoformat() if task.next_run_time else None,
-            "args": task.args,
-            "kwargs": task.kwargs,
-            "trigger": str(task.trigger),
-        }), 200
-        
     @app.route('/api/get_scheduled_tasks', methods=['GET'])
     @jwt_required()
     def getAllScheduledTasks():
@@ -379,7 +344,7 @@ def create_app():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        cursor.execute("SELECT * FROM apscheduler_jobs WHERE id LIKE %s", (f"{userID} , %",))
+        cursor.execute("SELECT * FROM apscheduler_jobs WHERE id LIKE %s", (f"{userID}_%",))
         tasks = cursor.fetchall()
         if not tasks:
             return jsonify({"Message":"No tasks"}), 200
@@ -396,23 +361,51 @@ def create_app():
         conn.close()
         return jsonify(tasks_list), 200
     
-    @app.route('/api/remove_task', methods=["POST"])
+    @app.route('/api/get_scheduled_task_details', methods=['GET'])
     @jwt_required()
-    def removeCurrentTask():
+    def getTaskDetails():
+        userID = get_jwt_identity()
         data = request.get_json()
-        taskID = data.get("task_id")
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM tasks WHERE task_id = %s", (taskID,))
-        if (cursor.fetchone()):
-            cursor.execute("DELETE FROM tasks WHERE task_id = %s", (taskID,))
-            conn.commit()
-            cursor.close()
-            conn.close()
-            return jsonify({"message":"Task Removed"}), 200
-        return jsonify({"errorMsg":"No task found"}),400
+        taskName = data.get("name")
+        task = scheduler.get_job(job_id=f"{userID}_{taskName}")
+        if not task:
+            return jsonify({"message":"no task found"}), 200
+        return jsonify({
+            "id": task.id,
+            "next_run_time": task.next_run_time.isoformat() if task.next_run_time else None,
+            "args": task.args,
+            "kwargs": task.kwargs,
+            "trigger": str(task.trigger),
+        }), 200
     
-    @app.route('/api/get_current_tasks')
+    @app.route('/api/remove_scheduled_task', methods=['POST'])
+    @jwt_required()
+    def deleteTask():
+        userID = get_jwt_identity()
+        data = request.get_json()
+        taskName = data.get("name")
+        if not taskName:
+            return jsonify({"Error: Task Name Required"}),400
+        try:
+            scheduler.remove_job(f'{userID}_{taskName}')
+        except:
+            return jsonify({"message":"Error: task not found"}), 404
+        return jsonify({"message:":"Task Removed"}), 200
+    
+    @app.route('/api/remove_all_scheduled_tasks', methods=['POST'])
+    @jwt_required()
+    def deleteAllScheduledTasks():
+        userID = get_jwt_identity()
+        jobList = scheduler.get_jobs()
+        if jobList.count == 0:
+            return jsonify({"message":"No tasks found"}), 200
+        print(jobList[0], flush=True)
+        for job in jobList:
+            scheduler.remove_job(job.id)
+            
+        return jsonify({"message" :"Task deleted successfully"}), 200
+    
+    @app.route('/api/get_all_current_tasks', methods=['GET'])
     @jwt_required()
     def getAllCurrentTasks():
         userID = get_jwt_identity()
@@ -424,6 +417,37 @@ def create_app():
         conn.close()
         return jsonify({"tasks":tasks}), 200
     
+    @app.route('/api/remove_current_task', methods=["POST"])
+    @jwt_required()
+    def removeCurrentTask():
+        userID = get_jwt_identity()
+        data = request.get_json()
+        taskID = data.get("task_id")
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM tasks WHERE task_id = %s AND user_id = %s", (taskID,userID))
+        if (cursor.fetchone()):
+            cursor.execute("DELETE FROM tasks WHERE task_id = %s", (taskID,))
+            conn.commit()
+            cursor.close()
+            conn.close()
+            return jsonify({"message":"Task Removed"}), 200
+        cursor.close()
+        conn.close()
+        return jsonify({"errorMsg":"No task found"}),400
+    
+    @app.route('/api/remove_all_current_tasks', methods=["POST"])
+    @jwt_required()
+    def removeAllCurrentTasks():
+        userID = get_jwt_identity()
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM tasks WHERE user_id = %s", (userID,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({"message":"Tasks Removed"}), 200
+    
     @app.route('/api/testTime', methods=['GET'])
     def returnTime():
         current_time = datetime.now(tz=zoneinfo.ZoneInfo('Asia/Tokyo'))
@@ -431,4 +455,3 @@ def create_app():
         return jsonify({"time":current_time}), 200
     
     return app
-
