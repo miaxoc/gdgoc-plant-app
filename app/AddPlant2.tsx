@@ -1,4 +1,3 @@
-import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 
@@ -57,5 +56,17 @@ const styles = StyleSheet.create({
     color: "#72A579",
     fontWeight: "bold",
     fontSize: 16,
+  }, 
+  nextButton: {
+    backgroundColor: "#72A579",
+    padding: 15,
+    borderRadius: 25,
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  nextText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#FEFCF3",
   },
 });

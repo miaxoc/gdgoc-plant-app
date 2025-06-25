@@ -1,4 +1,3 @@
-import React from "react";
 import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, ScrollView, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons"; // Icons for profile/menu
 import { RelativePathString, useRouter } from "expo-router";

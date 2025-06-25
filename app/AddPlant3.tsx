@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {View, Text, TouchableOpacity, Image, StyleSheet, ScrollView,} from "react-native";
 import { useRouter } from "expo-router";
 
@@ -54,7 +54,7 @@ const AddPlant3 = () => {
         <Text style={styles.nextText}>Next</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => router.push("/Home")}>
+      <TouchableOpacity onPress={() => router.push("/home")}>
         <Text style={styles.skipText}>skip</Text>
       </TouchableOpacity>
     </ScrollView>

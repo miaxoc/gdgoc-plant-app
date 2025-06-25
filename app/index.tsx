@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground, Button } from "react-native";
 import { RelativePathString, useRouter } from "expo-router";
 
