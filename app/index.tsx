@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ImageBackground, Button } from "react-native";
 import { RelativePathString, useRouter } from "expo-router";
 
@@ -28,7 +28,7 @@ export default function LoginScreen() {
 
           <Text style={styles.label}>Password</Text>
           <TextInput style={styles.input} placeholder="********" secureTextEntry placeholderTextColor="#000" />
- 
+
           <TouchableOpacity style={styles.button}>
             {/* TODO: Update this with the actual functinoality */}
             <Text style={styles.buttonText}>{isSignUp ? "Sign Up" : "Login"}</Text>

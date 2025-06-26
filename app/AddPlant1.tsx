@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -20,7 +20,7 @@ const AddPlant1 = () => {
       <Text style={styles.subtitle}>Choose Plant</Text>
       <View style={styles.inputContainer}>
         <TextInput
-          placeholder="Rose"
+          placeholder="Type species name or select a file"
           style={styles.input}
           placeholderTextColor="#999"
         />

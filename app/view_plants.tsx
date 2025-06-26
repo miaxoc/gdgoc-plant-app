@@ -1,3 +1,4 @@
+import React from "react";
 import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, ScrollView, Button, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons"; // Icons for profile/menu
 import { RelativePathString, useRouter } from "expo-router";
@@ -43,7 +44,7 @@ export default function HomeScreen() {
         showsHorizontalScrollIndicator={false}
       />
 
-      <Button title="DEBUG: Go to Add Plant" onPress={() => router.push("add_plant" as RelativePathString)} />
+      <Button title="DEBUG: Go to Add Plant" onPress={() => router.push("AddPlant1" as RelativePathString)} />
 
 
 
@@ -58,13 +59,13 @@ const styles = StyleSheet.create({
     sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginVertical: 10 },
     sectionTitle: { fontSize: 20, fontWeight: "bold" },
     seeAll: { color: "#739C6E", fontWeight: "bold" },
-  
+
     // Plants List
     plantContainer: { marginRight: 15, position: "relative" },
     plantImage: { width: 80, height: 80, borderRadius: 10 },
     badge: { position: "absolute", top: 0, right: 0, backgroundColor: "red", borderRadius: 12, width: 24, height: 24, justifyContent: "center", alignItems: "center" },
     badgeText: { color: "white", fontSize: 12, fontWeight: "bold" },
-  
+
     // Tasks
     taskContainer: { flexDirection: "row", alignItems: "center", backgroundColor: "white", borderRadius: 10, padding: 10, marginVertical: 5, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 5, elevation: 2 },
     taskImage: { width: 50, height: 50, borderRadius: 8, marginRight: 10 },

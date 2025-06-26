@@ -1,3 +1,4 @@
+import React from "react";
 import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, ScrollView, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons"; // Icons for profile/menu
 import { RelativePathString, useRouter } from "expo-router";
@@ -85,7 +86,7 @@ const styles = StyleSheet.create({
   sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginVertical: 10 },
   sectionTitle: { fontSize: 20, fontWeight: "bold" },
   seeAll: { color: "#739C6E", fontWeight: "bold" },
-  
+
   // Plants List
   plantContainer: { marginRight: 15, position: "relative" },
   plantImage: { width: 80, height: 80, borderRadius: 10 },
@@ -100,4 +101,3 @@ const styles = StyleSheet.create({
   taskAmount: { fontSize: 14, color: "#666" },
   taskFrequency: { fontSize: 12, color: "green" },
 });
-

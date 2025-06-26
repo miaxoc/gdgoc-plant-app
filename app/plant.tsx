@@ -1,6 +1,7 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import React from "react";
+import { useLocalSearchParams, RelativePathString, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { View, Text, Image, ActivityIndicator, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, Image, ActivityIndicator, TouchableOpacity, ScrollView, Button } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Dimensions } from "react-native";
 
@@ -13,16 +14,17 @@ export default function PlantDetails() {
     const router = useRouter();
     // const [plant, setPlant] = useState(null);
     // Temporary Plant for Testing Purposes
-    const plant = { 
+    const plant = {
         id: "1",
         name: "Cherry Tomato",
         scientificName: "Some Scientific Name for Cherry Tomato Goes Here",
         hint: "Tomatos are very red...",
         imageUrl: require("../assets/plants/plant1.jpg"),
         notifications: 1,
-        tasks: [{id: 1, title: "Water your plant!", subtitle: "This is pretty self explanatory, I think!"}]
+        tasks: [{id: 1, title: "Water your plant!", subtitle: "This is pretty self explanatory, I think!"}],
+        editPlant: "Edit Information"
     };
-    
+
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -95,9 +97,10 @@ export default function PlantDetails() {
                 shadowOpacity: 0.1,
                 shadowRadius: 4,
                 elevation: 2,
+
             }}
             >
-            <Ionicons name="menu" size={24} color="#6DA36B" />
+            <Ionicons name="menu" size={24} color="#72A579" />
             <View style={{ flex: 1, marginLeft: 10 }}>
                 <Text style={{ fontSize: 16, fontWeight: "bold" }}>{task.title}</Text>
                 <Text>{task.subtitle}</Text>
@@ -105,6 +108,14 @@ export default function PlantDetails() {
             <Ionicons name="checkbox-outline" size={24} color="gray" />
             </View>
         ))}
+
+        {/* Edit Plant */}
+
+          <TouchableOpacity style={{backgroundColor: "#72A579", padding: 15, borderRadius: 25, alignItems: "center", marginBottom: 15}} onPress={() => router.push("UpdatePlant")}>
+            <Text style={{ fontSize: 16, fontStyle: "italic", color: "#FEFCF3" }}>Edit Information</Text>
+          </TouchableOpacity>
+
         </ScrollView>
+
     );
 }
