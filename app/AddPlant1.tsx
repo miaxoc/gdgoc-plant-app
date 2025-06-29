@@ -131,7 +131,9 @@ const styles = StyleSheet.create({
     marginTop: 15,
     marginBottom: 20,
     justifyContent: "space-between",
+    height: 50,
   },
+
 
   input: {
     flex: 1,
