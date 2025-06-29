@@ -14,10 +14,7 @@ const AddPlant2 = () => {
         style={styles.button}
         onPress={() => router.push("/AddPlant3")}
       >
-      <TouchableOpacity
-        style={styles.nextButton}
-        onPress={() => router.push("/AddPlant3")}>
-      </TouchableOpacity>
+
         <Text style={styles.buttonText}>Next</Text>
       </TouchableOpacity>
     </View>
