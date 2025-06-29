@@ -60,7 +60,7 @@ export default function PlantDetails() {
     // }
 
     return (
-        <ScrollView style={{ flex: 1, backgroundColor: "#FAF8F1", padding: 20 }}>
+        <ScrollView style={{ flex: 1, backgroundColor: "#FEFCF3", padding: 20 }}>
 
         {/* Plant Image */}
         <View style={{ alignItems: "center", marginTop: 10 }}>
@@ -72,13 +72,26 @@ export default function PlantDetails() {
         </View>
 
         {/* Plant Name */}
-        <Text style={{ fontSize: 24, fontWeight: "bold", marginTop: 10 }}>{plant.name}</Text>
-        <Text style={{ fontSize: 16, fontStyle: "italic", color: "#6DA36B" }}>{plant.scientificName}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 10 }}>
+          <Text style={{ fontSize: 24, fontWeight: "bold", marginTop: 10 }}>{plant.name}</Text>
+          <TouchableOpacity
+            onPress={() =>router.push("UpdatePlant")}
+            style={{
+              backgroundColor: "#72A579",
+              padding: 6,
+              borderRadius: 8,
+            }}
+          >
+            <Ionicons name="pencil" size={18} color="#FEFCF3" />
+          </TouchableOpacity>
+        </View>
+
+        <Text style={{ fontSize: 16, fontStyle: "italic", color: "#72A579" }}>{plant.scientificName}</Text>
 
         {/* Hint Section */}
-        <View style={{ backgroundColor: "#A7D7A3", padding: 15, borderRadius: 10, marginVertical: 10 }}>
-            <Text style={{ fontWeight: "bold", fontSize: 16 }}>Psss...here's a hint</Text>
-            <Text>{plant.hint}</Text>
+        <View style={{ backgroundColor: "#72A579", padding: 15, borderRadius: 10, marginVertical: 10 }}>
+            <Text style={{ fontWeight: "bold", fontSize: 16, color: "#FEFCF3" }}>Psss...here's a hint</Text>
+            <Text style={{color: "#FEFCF3"}}>{plant.hint}</Text>
         </View>
 
         {/* Tasks Section */}
@@ -93,10 +106,8 @@ export default function PlantDetails() {
                 padding: 15,
                 borderRadius: 10,
                 marginVertical: 5,
-                shadowColor: "#000",
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
-                elevation: 2,
+                borderWidth: 2,
+                borderColor: "#72A579",
 
             }}
             >
@@ -108,12 +119,6 @@ export default function PlantDetails() {
             <Ionicons name="checkbox-outline" size={24} color="gray" />
             </View>
         ))}
-
-        {/* Edit Plant */}
-
-          <TouchableOpacity style={{backgroundColor: "#72A579", padding: 15, borderRadius: 25, alignItems: "center", marginBottom: 15}} onPress={() => router.push("UpdatePlant")}>
-            <Text style={{ fontSize: 16, fontStyle: "italic", color: "#FEFCF3" }}>Edit Information</Text>
-          </TouchableOpacity>
 
         </ScrollView>
 
