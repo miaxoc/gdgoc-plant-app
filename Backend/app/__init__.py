@@ -454,4 +454,55 @@ def create_app():
         current_time = datetime.strptime(current_time.strftime("%Y-%m-%d %H:%M:%S"), "%Y-%m-%d %H:%M:%S")
         return jsonify({"time":current_time}), 200
     
+    @app.route('/api/profile', methods=["GET"])
+    @jwt_required()
+    def get_user_details():
+        try:
+            user = get_jwt_identity()
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            logger.info(f'This is the user recieved {user}')
+            cursor.execute("SELECT * FROM users WHERE user_id = %s", (user,))
+            profile_data = cursor.fetchone()
+            if not profile_data:
+                return jsonify({"error": "User not found"}), 404
+            logger.info(f"This is the profile info of the user {profile_data}")
+            profile = {
+                "user_id": profile_data[0],
+                "username": profile_data[1],
+                "email": profile_data[2]
+            }
+            return jsonify({"profile": profile}), 200
+        except Exception as e:
+            logger.error(f'An error occured while trying to fetch the profile details of a user {str(e)}')
+            return jsonify({"error" : f"An error occured while trying to fetch the profile details of a user: {str(e)}" }), 500
+        
+    @app.route('/api/edit-profile', methods=["PUT"])
+    @jwt_required()
+    def edit_user_details():
+        try: 
+            user = get_jwt_identity()
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            data = request.get_json()
+            cursor.execute("SELECT * FROM users WHERE user_id = %s", (user,))
+            user_details = cursor.fetchone()
+            username = data.get("username", user_details[2])
+            new_pwd = data.get("password")
+            old_pwd = data.get("old_password")
+            if new_pwd and old_pwd:
+                if not bcrypt.check_password_hash(user_details[3],old_pwd):
+                    return jsonify({"error": "The input password is incorrect. Please try again"}), 404
+                new_pwd_hash = bcrypt.generate_password_hash(new_pwd).decode('utf-8')
+                cursor.execute("UPDATE users SET password = %s WHERE user_id = %s", (new_pwd_hash, user))
+            if username != user_details[2]:
+                cursor.execute("UPDATE users SET username = %s WHERE user_id = %s", (username, user))
+            conn.commit()
+            cursor.close()
+            conn.close()
+            return jsonify({"message":"User details updated successfully"}), 200
+        except Exception as e:
+            logger.error(f'An error occured while trying to update the profile details of a user {str(e)}')
+            return jsonify({"error" : f"An error occured while trying to update the profile details of a user: {str(e)}" }), 500
+        
     return app

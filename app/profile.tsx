@@ -1,9 +1,37 @@
-import React from "react";
+import React, {useState, useEffect} from "react";
 import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from "axios";
 
 export default function Profile() {
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const appUrl = "http://localhost:8080";
   const router = useRouter();
+
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      try {
+        const token =  await AsyncStorage.getItem("token");
+        console.log('This is the token used:', token)
+        const response = await axios.get(`${appUrl}/api/profile`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        if (response.data) {
+          setUsername(response.data.profile.username);
+          setEmail(response.data.profile.email);
+        }
+      } catch (error) {
+        console.error('An error occured while trying to fetch user details:', error);
+      }
+    }
+
+    fetchUserDetails();
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -18,8 +46,8 @@ export default function Profile() {
         </View>
 
         {/* place holder username + email */}
-        <Text style={styles.userName}>Username</Text>
-        <Text style={styles.email}>plantlover@email.com</Text>
+        <Text style={styles.userName}>{username}</Text>
+        <Text style={styles.email}>{email}</Text>
 
         <TouchableOpacity style={styles.button}>
           <Text style={styles.buttonText}>Edit Profile</Text>
