@@ -1,3 +1,4 @@
+import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 
@@ -13,10 +14,7 @@ const AddPlant2 = () => {
         style={styles.button}
         onPress={() => router.push("/AddPlant3")}
       >
-      <TouchableOpacity
-        style={styles.nextButton}
-        onPress={() => router.push("/AddPlant3")}>
-      </TouchableOpacity>
+
         <Text style={styles.buttonText}>Next</Text>
       </TouchableOpacity>
     </View>
@@ -56,7 +54,7 @@ const styles = StyleSheet.create({
     color: "#72A579",
     fontWeight: "bold",
     fontSize: 16,
-  }, 
+  },
   nextButton: {
     backgroundColor: "#72A579",
     padding: 15,

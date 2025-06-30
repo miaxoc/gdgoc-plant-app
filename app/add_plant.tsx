@@ -1,6 +1,8 @@
+// This page not used anymore
+
+import React from "react";
 import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
-
 
 const AddPlantScreen = () => {
 
