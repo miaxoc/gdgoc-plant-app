@@ -75,7 +75,7 @@ export default function PlantDetails() {
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 10 }}>
           <Text style={{ fontSize: 24, fontWeight: "bold", marginTop: 10 }}>{plant.name}</Text>
           <TouchableOpacity
-            onPress={() =>router.push("UpdatePlant")}
+            onPress={() =>router.push("./updatePlant")}
             style={{
               backgroundColor: "#72A579",
               padding: 6,

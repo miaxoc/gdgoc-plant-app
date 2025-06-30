@@ -19,9 +19,9 @@ const AddPlant1 = () => {
       quality: 1,
     });
 
-    if (!result.canceled) {
+    /*if (!result.canceled) {         Is result.assets there? 
       setImage(result.assets[0].uri);
-    }
+    } */ 
   };
 
   return (

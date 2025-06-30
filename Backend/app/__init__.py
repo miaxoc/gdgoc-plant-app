@@ -61,7 +61,7 @@ def create_app():
     def register():
             data = request.get_json()
             username = data.get('username')
-            pwd = data.get('pwd')
+            pwd = data.get('password')
             device = [data.get('deviceID')]
             email = data.get('email')
 
@@ -92,7 +92,7 @@ def create_app():
     def login():
         data = request.get_json()
         username = data.get('username')
-        pwd = data.get('pwd')
+        pwd = data.get('password')
         email = data.get('email')
 
         if (not username and not email) or not pwd :
