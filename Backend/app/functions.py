@@ -23,9 +23,8 @@ def getDBURL():
 def addTask(userID, taskName, taskDetails, taskTypes, plant_id):
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO tasks (user_id, name, details, types) VALUES (%s, %s, %s, %s)", (userID, taskName, taskDetails, Json(taskTypes)))
+    cursor.execute("INSERT INTO tasks (user_id, name, details, types, plant_id) VALUES (%s, %s, %s, %s, %s)", (userID, taskName, taskDetails, Json(taskTypes), plant_id))
     conn.commit()
-    print(f"{userID}, {taskName}, {taskDetails}", flush=True)
     conn.close()
     cursor.close()
 
@@ -40,7 +39,6 @@ def notifyUser(userID=1, plantNames="test"):
     if (user[3] == "N/A"):
         print("No Devices", flush=True)
         return "No Device Attached to User"
-    print(f"device: {DEVICE_TOKEN}", flush=True)
     DEVICE_TOKEN = user[3]
     
     sendNotif(DEVICE_TOKEN, "Water plants " + ", ".join(plantNames) + "!")
