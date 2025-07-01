@@ -321,10 +321,10 @@ def create_app():
         frequency = data.get("frequency")
         if not plantID:
             plantID = -1
-            
         timeHour = data.get("hour")
         timeMin = data.get("minute")
         types = data.get("types")
+        
         if frequency == "daily":
             scheduler.add_job(
                 func = addTask,
@@ -350,10 +350,10 @@ def create_app():
                 replace_existing = True
             )
         else:
-            interval = data.get("interval")
+            interval = data.get("interval") #in days
             start_time = datetime.now(zoneinfo.ZoneInfo('Asia/Tokyo')).replace(
-                hour=timeHour,
-                minute=timeMin,
+                hour=int(timeHour),
+                minute=int(timeMin),
                 second=0,
                 microsecond=0
             )
@@ -430,9 +430,8 @@ def create_app():
     def deleteAllScheduledTasks():
         userID = get_jwt_identity()
         jobList = scheduler.get_jobs()
-        if jobList.count == 0:
+        if len(jobList) == 0:
             return jsonify({"message":"No tasks found"}), 200
-        print(jobList[0], flush=True)
         for job in jobList:
             scheduler.remove_job(job.id)
             
