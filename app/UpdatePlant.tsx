@@ -14,7 +14,7 @@ const UpdatePlant = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Update Plant</Text>
+      <Text style={styles.header}>Update Plant</Text>
       <Text style={styles.label}>Nickname</Text>
       <View style={styles.inputContainer}>
       <TextInput
@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
 
-  title: {
+  header: {
     fontSize: 26,
     fontWeight: "bold",
     color: "#72A579",

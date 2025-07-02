@@ -8,7 +8,7 @@ import { Dimensions } from "react-native";
 
 export default function PlantDetails() {
     const screenWidth = Dimensions.get("window").width;
-    const imageSize = screenWidth * 0.10;
+    const imageSize = screenWidth - 40;
 
     const { id } = useLocalSearchParams(); // Get plant ID from URL
     const router = useRouter();
@@ -66,7 +66,7 @@ export default function PlantDetails() {
         <View style={{ alignItems: "center", marginTop: 10 }}>
             <Image
                 source={plant.imageUrl} // Use require() for local images or { uri: plant.imageUrl } for remote
-                style={{ width: imageSize, height: imageSize, borderRadius: 10 }}
+                style={{ width: imageSize, height: imageSize, borderRadius: 20 }}
                 resizeMode="cover"
             />
         </View>

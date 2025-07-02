@@ -21,7 +21,7 @@ export default function Profile() {
         <Text style={styles.userName}>Username</Text>
         <Text style={styles.email}>plantlover@email.com</Text>
 
-        <TouchableOpacity style={styles.button}>
+        <TouchableOpacity style={styles.button} onPress={() => router.push("/UpdateProfile")}>
           <Text style={styles.buttonText}>Edit Profile</Text>
         </TouchableOpacity>
 
@@ -41,7 +41,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FEFCF3",
     alignItems: "center",
-    justifyContent: "center",
     padding: 20,
   },
 
@@ -98,6 +97,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
     borderRadius: 25,
     marginTop: 10,
+    width: "100%",
+    alignItems: "center",
   },
 
   buttonText: {
