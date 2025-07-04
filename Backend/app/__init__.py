@@ -27,7 +27,6 @@ PLANT_IDENTIFY_URL = f"https://my-api.plantnet.org/v2/identify/all?include-relat
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# scheduler = BackgroundScheduler()
 jobstores = {
     'default': SQLAlchemyJobStore(url=getDBURL())
 }
@@ -319,22 +318,56 @@ def create_app():
         taskName = data.get("name")
         taskDetails = data.get("details")
         plantID = data.get("plantID")
+        frequency = data.get("frequency")
         if not plantID:
             plantID = -1
-        #shift to cron later
-        timeHour = data.get("hour") #string?
+        timeHour = data.get("hour")
         timeMin = data.get("minute")
         types = data.get("types")
-        scheduler.add_job(
-            func=addTask,
-            trigger='cron',
-            hour = timeHour,
-            minute = timeMin,
-            timezone=zoneinfo.ZoneInfo('Asia/Tokyo'),
-            id= f"{userID}_{taskName}",
-            args=[userID, taskName, taskDetails, types, plantID],
-            replace_existing=True
-        )
+        
+        if frequency == "daily":
+            scheduler.add_job(
+                func = addTask,
+                trigger = 'cron',
+                hour = timeHour,
+                minute = timeMin,
+                timezone = zoneinfo.ZoneInfo('Asia/Tokyo'),
+                id = f"{userID}_{taskName}",
+                args = [userID, taskName, taskDetails, types, plantID],
+                replace_existing = True
+            )
+        elif frequency == "weekly":
+            date = data.get("weekday")
+            scheduler.add_job(
+                func = addTask,
+                trigger ='cron',
+                day_of_week = date,
+                hour = timeHour,
+                minute = timeMin,
+                timezone = zoneinfo.ZoneInfo('Asia/Tokyo'),
+                id = f"{userID}_{taskName}",
+                args = [userID, taskName, taskDetails, types, plantID],
+                replace_existing = True
+            )
+        else:
+            interval = data.get("interval") #in days
+            start_time = datetime.now(zoneinfo.ZoneInfo('Asia/Tokyo')).replace(
+                hour=int(timeHour),
+                minute=int(timeMin),
+                second=0,
+                microsecond=0
+            )
+            scheduler.add_job(
+                id = f"{userID}_{taskName}",
+                func = addTask,
+                trigger ='interval',
+                days = interval,
+                start_date = start_time,
+                timezone = zoneinfo.ZoneInfo('Asia/Tokyo'),
+                args = [userID, taskName, taskDetails, types, plantID],
+                replace_existing = True
+            )
+        
         return jsonify({"message":"reminder scheduled"}), 200
     
     @app.route('/api/get_scheduled_tasks', methods=['GET'])
@@ -397,9 +430,8 @@ def create_app():
     def deleteAllScheduledTasks():
         userID = get_jwt_identity()
         jobList = scheduler.get_jobs()
-        if jobList.count == 0:
+        if len(jobList) == 0:
             return jsonify({"message":"No tasks found"}), 200
-        print(jobList[0], flush=True)
         for job in jobList:
             scheduler.remove_job(job.id)
             
