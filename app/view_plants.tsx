@@ -16,7 +16,7 @@ export default function HomeScreen() {
     <ScrollView style={styles.container}>
       {/* Welcome Message */}
       <Text style={styles.welcomeText}>Welcome back{"\n"}
-        <Text style={{ fontWeight: "bold" }}>TODO: NAME HERE</Text>
+        <Text style={{ fontWeight: "bold"}}>TODO: NAME HERE</Text>
       </Text>
 
       {/* Your Plants Section */}
@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
     appTitle: { fontSize: 18, fontWeight: "bold", color: "#739C6E" },
     welcomeText: { fontSize: 26, fontWeight: "300", marginVertical: 10 },
     sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginVertical: 10 },
-    sectionTitle: { fontSize: 20, fontWeight: "bold" },
+    sectionTitle: { fontSize: 20, fontWeight: "bold"},
     seeAll: { color: "#739C6E", fontWeight: "bold" },
 
     // Plants List
